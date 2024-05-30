@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1">
+  <model id="Basic_model_cFBA" name="Basic model cFBA">
+    <listOfCompartments>
+      <compartment id="cytoplasm" name="Cytoplasm" spatialDimensions="3" constant="true"/>
+      <compartment id="extracellular_space" name="Extracellular Space" spatialDimensions="3" constant="true"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="Intermediates" compartment="cytoplasm" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false">
+        <annotation>
+          <metadata>
+            <isImbalanced>false</isImbalanced>
+          </metadata>
+        </annotation>
+      </species>
+      <species id="Storage" compartment="cytoplasm" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false">
+        <annotation>
+          <metadata>
+            <isImbalanced>true</isImbalanced>
+            <wContribution>0</wContribution>
+          </metadata>
+        </annotation>
+      </species>
+      <species id="Enzy_upt" compartment="cytoplasm" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false">
+        <annotation>
+          <metadata>
+            <isImbalanced>true</isImbalanced>
+            <wContribution>0</wContribution>
+          </metadata>
+        </annotation>
+      </species>
+      <species id="Enzy_storage" compartment="cytoplasm" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false">
+        <annotation>
+          <metadata>
+            <isImbalanced>true</isImbalanced>
+            <wContribution>0</wContribution>
+          </metadata>
+        </annotation>
+      </species>
+      <species id="Enzy_growth" compartment="cytoplasm" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false">
+        <annotation>
+          <metadata>
+            <isImbalanced>true</isImbalanced>
+            <wContribution>0</wContribution>
+          </metadata>
+        </annotation>
+      </species>
+      <species id="Biomass" compartment="cytoplasm" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false">
+        <annotation>
+          <metadata>
+            <isImbalanced>true</isImbalanced>
+            <wContribution>1</wContribution>
+          </metadata>
+        </annotation>
+      </species>
+    </listOfSpecies>
+    <listOfReactions>
+      <reaction id="vupt" reversible="true" fast="false">
+        <annotation>
+          <metadata>
+            <catalyzedBy>Enzy_upt</catalyzedBy>
+            <A_value>1</A_value>
+          </metadata>
+        </annotation>
+        <listOfProducts>
+          <speciesReference species="Intermediates" stoichiometry="1" constant="true"/>
+        </listOfProducts>
+        <kineticLaw>
+          <listOfLocalParameters>
+            <localParameter id="LB_0" value="0"/>
+            <localParameter id="UB_0" value="1"/>
+            <localParameter id="LB_1" value="0"/>
+            <localParameter id="UB_1" value="1"/>
+            <localParameter id="LB_2" value="0"/>
+            <localParameter id="UB_2" value="1"/>
+            <localParameter id="LB_3" value="0"/>
+            <localParameter id="UB_3" value="0"/>
+            <localParameter id="LB_4" value="0"/>
+            <localParameter id="UB_4" value="0"/>
+            <localParameter id="LB_5" value="0"/>
+            <localParameter id="UB_5" value="0"/>
+            <localParameter id="LB_6" value="0"/>
+            <localParameter id="UB_6" value="0"/>
+            <localParameter id="LB_7" value="0"/>
+            <localParameter id="UB_7" value="0"/>
+            <localParameter id="LB_8" value="0"/>
+            <localParameter id="UB_8" value="0"/>
+            <localParameter id="LB_9" value="0"/>
+            <localParameter id="UB_9" value="0"/>
+            <localParameter id="LB_10" value="0"/>
+            <localParameter id="UB_10" value="0"/>
+          </listOfLocalParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="vstorage_S" reversible="true" fast="false">
+        <annotation>
+          <metadata>
+            <catalyzedBy>Enzy_storage</catalyzedBy>
+            <A_value>2</A_value>
+          </metadata>
+        </annotation>
+        <listOfReactants>
+          <speciesReference species="Intermediates" stoichiometry="1" constant="true"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Storage" stoichiometry="1" constant="true"/>
+        </listOfProducts>
+        <kineticLaw>
+          <listOfLocalParameters>
+            <localParameter id="LB_0" value="0"/>
+            <localParameter id="UB_0" value="1000"/>
+            <localParameter id="LB_1" value="0"/>
+            <localParameter id="UB_1" value="1000"/>
+            <localParameter id="LB_2" value="0"/>
+            <localParameter id="UB_2" value="1000"/>
+            <localParameter id="LB_3" value="0"/>
+            <localParameter id="UB_3" value="1000"/>
+            <localParameter id="LB_4" value="0"/>
+            <localParameter id="UB_4" value="1000"/>
+            <localParameter id="LB_5" value="0"/>
+            <localParameter id="UB_5" value="1000"/>
+            <localParameter id="LB_6" value="0"/>
+            <localParameter id="UB_6" value="1000"/>
+            <localParameter id="LB_7" value="0"/>
+            <localParameter id="UB_7" value="1000"/>
+            <localParameter id="LB_8" value="0"/>
+            <localParameter id="UB_8" value="1000"/>
+            <localParameter id="LB_9" value="0"/>
+            <localParameter id="UB_9" value="1000"/>
+            <localParameter id="LB_10" value="0"/>
+            <localParameter id="UB_10" value="1000"/>
+          </listOfLocalParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="vstorage_D" reversible="true" fast="false">
+        <annotation>
+          <metadata>
+            <catalyzedBy>Enzy_storage</catalyzedBy>
+            <A_value>2</A_value>
+          </metadata>
+        </annotation>
+        <listOfReactants>
+          <speciesReference species="Storage" stoichiometry="1" constant="true"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Intermediates" stoichiometry="0.8" constant="true"/>
+        </listOfProducts>
+        <kineticLaw>
+          <listOfLocalParameters>
+            <localParameter id="LB_0" value="0"/>
+            <localParameter id="UB_0" value="1000"/>
+            <localParameter id="LB_1" value="0"/>
+            <localParameter id="UB_1" value="1000"/>
+            <localParameter id="LB_2" value="0"/>
+            <localParameter id="UB_2" value="1000"/>
+            <localParameter id="LB_3" value="0"/>
+            <localParameter id="UB_3" value="1000"/>
+            <localParameter id="LB_4" value="0"/>
+            <localParameter id="UB_4" value="1000"/>
+            <localParameter id="LB_5" value="0"/>
+            <localParameter id="UB_5" value="1000"/>
+            <localParameter id="LB_6" value="0"/>
+            <localParameter id="UB_6" value="1000"/>
+            <localParameter id="LB_7" value="0"/>
+            <localParameter id="UB_7" value="1000"/>
+            <localParameter id="LB_8" value="0"/>
+            <localParameter id="UB_8" value="1000"/>
+            <localParameter id="LB_9" value="0"/>
+            <localParameter id="UB_9" value="1000"/>
+            <localParameter id="LB_10" value="0"/>
+            <localParameter id="UB_10" value="1000"/>
+          </listOfLocalParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="venzy_1" reversible="true" fast="false">
+        <listOfReactants>
+          <speciesReference species="Intermediates" stoichiometry="1" constant="true"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Enzy_upt" stoichiometry="1" constant="true"/>
+        </listOfProducts>
+        <kineticLaw>
+          <listOfLocalParameters>
+            <localParameter id="LB_0" value="0"/>
+            <localParameter id="UB_0" value="1000"/>
+            <localParameter id="LB_1" value="0"/>
+            <localParameter id="UB_1" value="1000"/>
+            <localParameter id="LB_2" value="0"/>
+            <localParameter id="UB_2" value="1000"/>
+            <localParameter id="LB_3" value="0"/>
+            <localParameter id="UB_3" value="1000"/>
+            <localParameter id="LB_4" value="0"/>
+            <localParameter id="UB_4" value="1000"/>
+            <localParameter id="LB_5" value="0"/>
+            <localParameter id="UB_5" value="1000"/>
+            <localParameter id="LB_6" value="0"/>
+            <localParameter id="UB_6" value="1000"/>
+            <localParameter id="LB_7" value="0"/>
+            <localParameter id="UB_7" value="1000"/>
+            <localParameter id="LB_8" value="0"/>
+            <localParameter id="UB_8" value="1000"/>
+            <localParameter id="LB_9" value="0"/>
+            <localParameter id="UB_9" value="1000"/>
+            <localParameter id="LB_10" value="0"/>
+            <localParameter id="UB_10" value="1000"/>
+          </listOfLocalParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="venzy_2" reversible="true" fast="false">
+        <listOfReactants>
+          <speciesReference species="Intermediates" stoichiometry="1" constant="true"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Enzy_storage" stoichiometry="1" constant="true"/>
+        </listOfProducts>
+        <kineticLaw>
+          <listOfLocalParameters>
+            <localParameter id="LB_0" value="0"/>
+            <localParameter id="UB_0" value="1000"/>
+            <localParameter id="LB_1" value="0"/>
+            <localParameter id="UB_1" value="1000"/>
+            <localParameter id="LB_2" value="0"/>
+            <localParameter id="UB_2" value="1000"/>
+            <localParameter id="LB_3" value="0"/>
+            <localParameter id="UB_3" value="1000"/>
+            <localParameter id="LB_4" value="0"/>
+            <localParameter id="UB_4" value="1000"/>
+            <localParameter id="LB_5" value="0"/>
+            <localParameter id="UB_5" value="1000"/>
+            <localParameter id="LB_6" value="0"/>
+            <localParameter id="UB_6" value="1000"/>
+            <localParameter id="LB_7" value="0"/>
+            <localParameter id="UB_7" value="1000"/>
+            <localParameter id="LB_8" value="0"/>
+            <localParameter id="UB_8" value="1000"/>
+            <localParameter id="LB_9" value="0"/>
+            <localParameter id="UB_9" value="1000"/>
+            <localParameter id="LB_10" value="0"/>
+            <localParameter id="UB_10" value="1000"/>
+          </listOfLocalParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="venzy_3" reversible="true" fast="false">
+        <listOfReactants>
+          <speciesReference species="Intermediates" stoichiometry="1" constant="true"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Enzy_growth" stoichiometry="1" constant="true"/>
+        </listOfProducts>
+        <kineticLaw>
+          <listOfLocalParameters>
+            <localParameter id="LB_0" value="0"/>
+            <localParameter id="UB_0" value="1000"/>
+            <localParameter id="LB_1" value="0"/>
+            <localParameter id="UB_1" value="1000"/>
+            <localParameter id="LB_2" value="0"/>
+            <localParameter id="UB_2" value="1000"/>
+            <localParameter id="LB_3" value="0"/>
+            <localParameter id="UB_3" value="1000"/>
+            <localParameter id="LB_4" value="0"/>
+            <localParameter id="UB_4" value="1000"/>
+            <localParameter id="LB_5" value="0"/>
+            <localParameter id="UB_5" value="1000"/>
+            <localParameter id="LB_6" value="0"/>
+            <localParameter id="UB_6" value="1000"/>
+            <localParameter id="LB_7" value="0"/>
+            <localParameter id="UB_7" value="1000"/>
+            <localParameter id="LB_8" value="0"/>
+            <localParameter id="UB_8" value="1000"/>
+            <localParameter id="LB_9" value="0"/>
+            <localParameter id="UB_9" value="1000"/>
+            <localParameter id="LB_10" value="0"/>
+            <localParameter id="UB_10" value="1000"/>
+          </listOfLocalParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="vgrowth" reversible="true" fast="false">
+        <annotation>
+          <metadata>
+            <catalyzedBy>Enzy_growth</catalyzedBy>
+            <A_value>6</A_value>
+          </metadata>
+        </annotation>
+        <listOfReactants>
+          <speciesReference species="Intermediates" stoichiometry="1" constant="true"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Biomass" stoichiometry="1" constant="true"/>
+        </listOfProducts>
+        <kineticLaw>
+          <listOfLocalParameters>
+            <localParameter id="LB_0" value="0"/>
+            <localParameter id="UB_0" value="1000"/>
+            <localParameter id="LB_1" value="0"/>
+            <localParameter id="UB_1" value="1000"/>
+            <localParameter id="LB_2" value="0"/>
+            <localParameter id="UB_2" value="1000"/>
+            <localParameter id="LB_3" value="0"/>
+            <localParameter id="UB_3" value="1000"/>
+            <localParameter id="LB_4" value="0"/>
+            <localParameter id="UB_4" value="1000"/>
+            <localParameter id="LB_5" value="0"/>
+            <localParameter id="UB_5" value="1000"/>
+            <localParameter id="LB_6" value="0"/>
+            <localParameter id="UB_6" value="1000"/>
+            <localParameter id="LB_7" value="0"/>
+            <localParameter id="UB_7" value="1000"/>
+            <localParameter id="LB_8" value="0"/>
+            <localParameter id="UB_8" value="1000"/>
+            <localParameter id="LB_9" value="0"/>
+            <localParameter id="UB_9" value="1000"/>
+            <localParameter id="LB_10" value="0"/>
+            <localParameter id="UB_10" value="1000"/>
+          </listOfLocalParameters>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>
