@@ -1,10 +1,8 @@
 __version__ = (0, 0, 0)
 __all__ = []
 
-from os import PathLike
-from pathlib import Path
 from time import time
-from typing import Any, Type, Union, cast
+from typing import Any, Type, cast
 
 import libsbml
 import numpy as np
@@ -12,19 +10,23 @@ import optlang.interface
 import pandas as pd
 from numpy.typing import NDArray
 
-# solver-specific types
-from optlang import Constraint as _Constraint
-from optlang import Model as _Model
-from optlang import Variable as _Variable
-
-# solver-agnostic types
-Constraint: Type[optlang.interface.Constraint] = _Constraint
-Model: Type[optlang.interface.Model] = _Model
-Variable: Type[optlang.interface.Variable] = _Variable
-
-FileName = Union[str, Path, PathLike]
-ReactionDict = dict[str, dict[str, Any]]
-SpeciesDict = dict[str, dict[str, Any]]
+from py_cfba.typing import (
+    AlphaOutput,
+    CapacityMatrices,
+    Constraint,
+    ExtractedImbalancedMetabolites,
+    FileName,
+    FluxOutput,
+    InitSMatrix,
+    KineticParamsBounds,
+    LPProblemOutput,
+    Model,
+    ReactionData,
+    ReactionDict,
+    SpeciesData,
+    SpeciesDict,
+    Variable,
+)
 
 
 def cFBA_backbone_from_S_matrix(S_matrix: pd.DataFrame) -> tuple[dict[str, Any], float]:
@@ -367,7 +369,7 @@ def parse_species(sbml_model: libsbml.Model) -> SpeciesDict:
         dict: Dictionary containing species information.
     """
     # Initialize an empty dictionary to store species information
-    species = {}
+    species: SpeciesDict = {}
 
     # Iterate over each species in the model
     for i in range(sbml_model.getNumSpecies()):
@@ -388,11 +390,12 @@ def parse_species(sbml_model: libsbml.Model) -> SpeciesDict:
                 w_contribution = float(annotation[start_idx + len("<wContribution>") : end_idx])
 
         # Add species information to the dictionary
-        species[metabolite.getId()] = {
+        species_data: SpeciesData = {
             "compartment": metabolite.getCompartment(),
             "imbalanced": is_imbalanced,
             "w_contribution": w_contribution,
         }
+        species[metabolite.getId()] = species_data
 
     # Return the dictionary containing species information
     return species
@@ -409,7 +412,7 @@ def parse_reactions(sbml_model: libsbml.Model) -> ReactionDict:
         dict: Dictionary containing reaction information.
     """
     # Initialize an empty dictionary to store reaction information
-    reactions = {}
+    reactions: ReactionDict = {}
 
     # Iterate over each reaction in the model
     for i in range(sbml_model.getNumReactions()):
@@ -417,11 +420,11 @@ def parse_reactions(sbml_model: libsbml.Model) -> ReactionDict:
         reaction: libsbml.Reaction = sbml_model.getReaction(i)
 
         # Initialize a dictionary to store reaction data
-        reaction_data = {
+        reaction_data: ReactionData = {
             "reactants": {},
             "products": {},
             "kinetic_law": {},
-            "annotations": {},
+            "annotation": "",
         }
 
         # Extract reactants and their stoichiometry
@@ -452,7 +455,7 @@ def parse_reactions(sbml_model: libsbml.Model) -> ReactionDict:
     return reactions
 
 
-def initialize_S_matrix(species: SpeciesDict, reactions: ReactionDict) -> tuple[NDArray, list[str], list[str]]:
+def initialize_S_matrix(species: SpeciesDict, reactions: ReactionDict) -> InitSMatrix:
     """
     Initialize the stoichiometry matrix S.
 
@@ -487,12 +490,10 @@ def initialize_S_matrix(species: SpeciesDict, reactions: ReactionDict) -> tuple[
             metabolite_index = mets.index(metabolite_id)
             S[metabolite_index, reaction_index] += stoichiometry
 
-    return S, mets, rxns
+    return InitSMatrix(S, mets, rxns)
 
 
-def extract_imbalanced_metabolites(
-    species: SpeciesDict, mets: list[str], S: NDArray
-) -> tuple[list[int], list[int], list[str], list[str], NDArray, NDArray, NDArray]:
+def extract_imbalanced_metabolites(species: SpeciesDict, mets: list[str], S: NDArray) -> ExtractedImbalancedMetabolites:
     """
     Extract indices and data for balanced and imbalanced metabolites.
 
@@ -533,7 +534,7 @@ def extract_imbalanced_metabolites(
     Sb = S[indices_balanced, :]
     Si = S[indices_imbalanced, :]
 
-    return (
+    return ExtractedImbalancedMetabolites(
         indices_balanced,
         indices_imbalanced,
         imbalanced_mets,
@@ -544,7 +545,7 @@ def extract_imbalanced_metabolites(
     )
 
 
-def extract_kinetic_parameters(reactions: ReactionDict) -> tuple[NDArray, NDArray]:
+def extract_kinetic_parameters(reactions: ReactionDict) -> KineticParamsBounds:
     """
     Extract lower and upper bounds for kinetic parameters.
 
@@ -577,7 +578,7 @@ def extract_kinetic_parameters(reactions: ReactionDict) -> tuple[NDArray, NDArra
     low_b_var = np.array(low_b_var)
     upp_b_var = np.array(upp_b_var)
 
-    return low_b_var, upp_b_var
+    return KineticParamsBounds(low_b_var, upp_b_var)
 
 
 def generate_time_components(low_b_var: NDArray) -> int:
@@ -594,7 +595,7 @@ def generate_time_components(low_b_var: NDArray) -> int:
     return np.size(low_b_var, axis=1)
 
 
-def generate_B_and_A_matrices(reactions: ReactionDict, imbalanced_mets: list[str]) -> tuple[NDArray, NDArray]:
+def generate_B_and_A_matrices(reactions: ReactionDict, imbalanced_mets: list[str]) -> CapacityMatrices:
     """
     Generate B and A matrices for capacities.
 
@@ -644,12 +645,10 @@ def generate_B_and_A_matrices(reactions: ReactionDict, imbalanced_mets: list[str
             if catalyst_i == imbalanced_mets[cat_pos]:
                 Acap[i, reaction_pos] = A_values[reaction_id]
 
-    return Bcap, Acap
+    return CapacityMatrices(Bcap, Acap)
 
 
-def generate_LP_cFBA(
-    sbml_file: FileName, quotas: list[tuple[str, str, int, float]], dt: float
-) -> tuple[list[optlang.interface.Constraint], NDArray, list[str], int, int, int]:
+def generate_LP_cFBA(sbml_file: FileName, quotas: list[tuple[str, str, int, float]], dt: float) -> LPProblemOutput:
     """
     Generate LP problem for constrained flux balance analysis (cFBA).
 
@@ -743,7 +742,7 @@ def generate_LP_cFBA(
                 con = Constraint(exp, ub=0, name=f"capacity{ i }_{ j }")
                 cons.append(con)
 
-    return cons, Mk, imbalanced_mets, nm, nr, nt
+    return LPProblemOutput(cons, Mk, imbalanced_mets, nm, nr, nt)
 
 
 def create_lp_problem(
@@ -775,9 +774,7 @@ def create_lp_problem(
     return prob
 
 
-def find_alpha(
-    cons: list[optlang.interface.Constraint], Mk: NDArray, imbalanced_mets: list[str]
-) -> tuple[float, optlang.interface.Model]:
+def find_alpha(cons: list[optlang.interface.Constraint], Mk: NDArray, imbalanced_mets: list[str]) -> AlphaOutput:
     """
     Find the optimal value for the cyclic growth rate alpha.
 
@@ -823,12 +820,10 @@ def find_alpha(
     elapsed_time = (time() - start) / 60
     print(f"{elapsed_time:.2f} min")
 
-    return alpha, prob
+    return AlphaOutput(alpha, prob)
 
 
-def get_fluxes_amounts(
-    sbml_file: FileName, prob: optlang.interface.Model, dt: float
-) -> tuple[NDArray, NDArray, NDArray]:
+def get_fluxes_amounts(sbml_file: FileName, prob: optlang.interface.Model, dt: float) -> FluxOutput:
     """
     Obtain fluxes and metabolite amounts over time from cFBA simulations.
 
@@ -851,14 +846,14 @@ def get_fluxes_amounts(
 
     # Initialize matrices and extract relevant data
     S, mets, rxns = initialize_S_matrix(species, reactions)
-    _, _, imbalanced_mets, _, _, _, Si = extract_imbalanced_metabolites(species, mets, S)
+    ext = extract_imbalanced_metabolites(species, mets, S)
     low_b_var, _ = extract_kinetic_parameters(reactions)
     nt = generate_time_components(low_b_var)
     t = np.arange(0, nt * dt, dt)
 
     # Initialize arrays to store fluxes and amounts
     fluxes = np.zeros((len(rxns), nt - 1))
-    amounts = np.zeros((len(imbalanced_mets), nt))
+    amounts = np.zeros((len(ext.imbalanced_mets), nt))
 
     # Extract fluxes and amounts from LP problem variables
     for var in prob.variables.values():
@@ -868,11 +863,11 @@ def get_fluxes_amounts(
             i = rxns.index(name)
             fluxes[i, j] = var.primal
         except ValueError:
-            i = imbalanced_mets.index(name)
+            i = ext.imbalanced_mets.index(name)
             amounts[i, j + 1] = var.primal
 
     # Calculate metabolite amounts based on stoichiometry and fluxes
-    amounts[:, 1:] = np.dot(Si, fluxes) * dt
+    amounts[:, 1:] = np.dot(ext.Si, fluxes) * dt
     amounts = np.cumsum(amounts, axis=1)
 
-    return fluxes, amounts, t
+    return FluxOutput(fluxes, amounts, t)
