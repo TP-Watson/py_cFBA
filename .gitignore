@@ -4,3 +4,10 @@ __pycache__/
 
 # Jupyter NB checkpoints
 .ipynb_checkpoints/
+
+# Build/distribute files
+dist/
+**.egg-info
+
+# Sensitive data
+.pypirc
