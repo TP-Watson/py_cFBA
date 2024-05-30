@@ -21,7 +21,6 @@ def cFBA_backbone_from_S_matrix(S_matrix):
 
     # Get metabolite and reaction labels
     metabolites = list(S_matrix.index)
-    reactions = list(S_matrix.columns)
 
     # Initialize data dictionary to store user inputs
     data = {
@@ -166,9 +165,6 @@ def excel_to_sbml(excel_file, output_file):
     S_mat = pd.read_excel(excel_file, sheet_name="S_mat", header=0, index_col=0)
     S = np.array(S_mat)
 
-    # number of metabolites and reactions
-    mr, nr = S.shape
-
     # Reaction and metabolite labels
     rxns = list(S_mat)
     mets = list(S_mat.index)
@@ -190,8 +186,6 @@ def excel_to_sbml(excel_file, output_file):
     t = np.array(
         pd.read_excel(excel_file, sheet_name="lb_var", header=None, index_col=0)
     )[0]
-    nt = np.size(t)
-    dt = t[1] - t[0]  # Steps in time
 
     low_b_var = np.array(
         pd.read_excel(excel_file, sheet_name="lb_var", header=0, index_col=0)
@@ -252,7 +246,7 @@ def excel_to_sbml(excel_file, output_file):
         reaction.setFast(False)  # or True, depending on your model
 
         # Set time-specific upper and lower bounds for the reaction
-        for time_index, time_point in enumerate(t):
+        for time_index, _ in enumerate(t):
             lower_bound = float(low_b_var[rxns.index(reaction_id), time_index])
             upper_bound = float(upp_b_var[rxns.index(reaction_id), time_index])
 
@@ -487,7 +481,7 @@ def initialize_S_matrix(species, reactions):
     S = np.zeros((nm, nr))
 
     # Populate the S matrix based on reactants and products of each reaction
-    for reaction_index, (reaction_id, reaction_data) in enumerate(reactions.items()):
+    for reaction_index, (_, reaction_data) in enumerate(reactions.items()):
         # Update stoichiometry for reactants
         for metabolite_id, stoichiometry in reaction_data["reactants"].items():
             metabolite_index = mets.index(metabolite_id)
@@ -567,7 +561,7 @@ def extract_kinetic_parameters(reactions):
     upp_b_var = []
 
     # Iterate over each reaction to extract kinetic parameters
-    for reaction_id, reaction_data in reactions.items():
+    for _, reaction_data in reactions.items():
         kinetic_law_data = reaction_data["kinetic_law"]
 
         # Extract lower bounds for kinetic parameters
@@ -686,14 +680,13 @@ def generate_LP_cFBA(sbml_file, quotas, dt):
     # Read SBML file and parse model components
     document = read_sbml_file(sbml_file)
     model = document.getModel()
-    compartments = parse_compartments(model)
     species = parse_species(model)
     reactions = parse_reactions(model)
 
     # Initialize matrices and extract metabolite information
     S, mets, rxns = initialize_S_matrix(species, reactions)
-    indices_balanced, indices_imbalanced, imbalanced_mets, balanced_mets, w, Sb, Si = (
-        extract_imbalanced_metabolites(species, mets, S)
+    _, _, imbalanced_mets, balanced_mets, w, Sb, Si = extract_imbalanced_metabolites(
+        species, mets, S
     )
     low_b_var, upp_b_var = extract_kinetic_parameters(reactions)
     nt = generate_time_components(low_b_var)
@@ -864,16 +857,15 @@ def get_fluxes_amounts(sbml_file, prob, dt):
     document = read_sbml_file(sbml_file)
     model = document.getModel()
 
-    compartments = parse_compartments(model)
     species = parse_species(model)
     reactions = parse_reactions(model)
 
     # Initialize matrices and extract relevant data
     S, mets, rxns = initialize_S_matrix(species, reactions)
-    indices_balanced, indices_imbalanced, imbalanced_mets, balanced_mets, w, Sb, Si = (
+    _, _, imbalanced_mets, _, _, _, Si = (
         extract_imbalanced_metabolites(species, mets, S)
     )
-    low_b_var, upp_b_var = extract_kinetic_parameters(reactions)
+    low_b_var, _ = extract_kinetic_parameters(reactions)
     nt = generate_time_components(low_b_var)
     t = np.arange(0, nt * dt, dt)
 
