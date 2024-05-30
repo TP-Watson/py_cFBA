@@ -862,8 +862,8 @@ def get_fluxes_amounts(sbml_file, prob, dt):
 
     # Initialize matrices and extract relevant data
     S, mets, rxns = initialize_S_matrix(species, reactions)
-    _, _, imbalanced_mets, _, _, _, Si = (
-        extract_imbalanced_metabolites(species, mets, S)
+    _, _, imbalanced_mets, _, _, _, Si = extract_imbalanced_metabolites(
+        species, mets, S
     )
     low_b_var, _ = extract_kinetic_parameters(reactions)
     nt = generate_time_components(low_b_var)
