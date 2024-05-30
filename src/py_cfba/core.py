@@ -1,14 +1,33 @@
 __version__ = (0, 0, 0)
 __all__ = []
 
-import pandas as pd
-import numpy as np
-import libsbml
-from optlang import Constraint, Variable, Model
+from os import PathLike
+from pathlib import Path
 from time import time
+from typing import Any, Type, Union, cast
+
+import libsbml
+import numpy as np
+import optlang.interface
+import pandas as pd
+from numpy.typing import NDArray
+
+# solver-specific types
+from optlang import Constraint as _Constraint
+from optlang import Model as _Model
+from optlang import Variable as _Variable
+
+# solver-agnostic types
+Constraint: Type[optlang.interface.Constraint] = _Constraint
+Model: Type[optlang.interface.Model] = _Model
+Variable: Type[optlang.interface.Variable] = _Variable
+
+FileName = Union[str, Path, PathLike]
+ReactionDict = dict[str, dict[str, Any]]
+SpeciesDict = dict[str, dict[str, Any]]
 
 
-def cFBA_backbone_from_S_matrix(S_matrix):
+def cFBA_backbone_from_S_matrix(S_matrix: pd.DataFrame) -> tuple[dict[str, Any], float]:
     """
     Generate an Excel backbone for a cFBA model based on the provided Stoichiometric matrix.
 
@@ -39,9 +58,7 @@ def cFBA_backbone_from_S_matrix(S_matrix):
     imbalanced_indices = list(
         map(
             int,
-            input(
-                "Enter the indices of imbalanced metabolites (comma-separated): "
-            ).split(","),
+            input("Enter the indices of imbalanced metabolites (comma-separated): ").split(","),
         )
     )
     imbalanced_metabolites = [metabolites[i - 1] for i in imbalanced_indices]
@@ -57,9 +74,7 @@ def cFBA_backbone_from_S_matrix(S_matrix):
 
     # Ask if user wants to test capacities
     print("\n-------------- Enzyme capacities --------------")
-    use_capacities = (
-        input("\nDo you want to test capacities? (yes/no): ").lower().strip()
-    )
+    use_capacities = input("\nDo you want to test capacities? (yes/no): ").lower().strip()
     if use_capacities == "yes":
         data["use_capacities"] = True
 
@@ -70,9 +85,7 @@ def cFBA_backbone_from_S_matrix(S_matrix):
         catalyst_indices = list(
             map(
                 int,
-                input(
-                    "Enter the indices of catalyst metabolites (comma-separated): "
-                ).split(","),
+                input("Enter the indices of catalyst metabolites (comma-separated): ").split(","),
             )
         )
         catalyst_metabolites = [imbalanced_metabolites[i - 1] for i in catalyst_indices]
@@ -83,7 +96,7 @@ def cFBA_backbone_from_S_matrix(S_matrix):
     return data, dt
 
 
-def generate_cFBA_excel_sheet(S_matrix, data, output_file_name):
+def generate_cFBA_excel_sheet(S_matrix: pd.DataFrame, data: dict[str, Any], output_file_name: FileName) -> None:
     """
     Generate an Excel backbone for a cFBA model based on the provided Stoichiometric matrix and user data.
 
@@ -102,9 +115,7 @@ def generate_cFBA_excel_sheet(S_matrix, data, output_file_name):
         pd.DataFrame(S_matrix).to_excel(writer, sheet_name="S_mat")
 
         # Tab 2: Imbalanced_mets
-        imbalanced_mets_df = pd.DataFrame(
-            {"Met": data["Imbalanced metabolites"], "w_matrix": ""}
-        )
+        imbalanced_mets_df = pd.DataFrame({"Met": data["Imbalanced metabolites"], "w_matrix": ""})
         imbalanced_mets_df.to_excel(writer, sheet_name="Imbalanced_mets", index=False)
 
         # Tab 3: lb_var
@@ -117,9 +128,7 @@ def generate_cFBA_excel_sheet(S_matrix, data, output_file_name):
         lb_var_df.to_excel(writer, sheet_name="lb_var")
 
         # Tab 4: ub_var
-        ub_var_df = pd.DataFrame(
-            1000, index=S_matrix.columns, columns=time_points_rounded
-        )
+        ub_var_df = pd.DataFrame(1000, index=S_matrix.columns, columns=time_points_rounded)
         ub_var_df.to_excel(writer, sheet_name="ub_var")
 
         # Tab 5: A_cap
@@ -148,7 +157,7 @@ def generate_cFBA_excel_sheet(S_matrix, data, output_file_name):
             b_cap_df.to_excel(writer, sheet_name="B_cap", index=False)
 
 
-def excel_to_sbml(excel_file, output_file):
+def excel_to_sbml(excel_file: FileName, output_file: FileName) -> None:
     """
     Converts metabolic model data from an Excel file (format for cFBA) to SBML format and saves it to an output file.
 
@@ -174,24 +183,14 @@ def excel_to_sbml(excel_file, output_file):
     w = np.array(data["w_matrix"])
 
     # Read the capacity matrices from Excel
-    Acap = np.array(
-        pd.read_excel(excel_file, sheet_name="A_cap", header=0, index_col=None)
-    )
-    Bcap = np.array(
-        pd.read_excel(excel_file, sheet_name="B_cap", header=0, index_col=None)
-    )
+    Acap = np.array(pd.read_excel(excel_file, sheet_name="A_cap", header=0, index_col=None))
+    Bcap = np.array(pd.read_excel(excel_file, sheet_name="B_cap", header=0, index_col=None))
 
     # Read time and variable bounds
-    t = np.array(
-        pd.read_excel(excel_file, sheet_name="lb_var", header=None, index_col=0)
-    )[0]
+    t = np.array(pd.read_excel(excel_file, sheet_name="lb_var", header=None, index_col=0))[0]
 
-    low_b_var = np.array(
-        pd.read_excel(excel_file, sheet_name="lb_var", header=0, index_col=0)
-    )
-    upp_b_var = np.array(
-        pd.read_excel(excel_file, sheet_name="ub_var", header=0, index_col=0)
-    )
+    low_b_var = np.array(pd.read_excel(excel_file, sheet_name="lb_var", header=0, index_col=0))
+    upp_b_var = np.array(pd.read_excel(excel_file, sheet_name="ub_var", header=0, index_col=0))
 
     # Get metabolite and reaction labels
     rxns = list(S_mat.columns)
@@ -199,18 +198,18 @@ def excel_to_sbml(excel_file, output_file):
 
     # Create SBML model
     document = libsbml.SBMLDocument(3, 1)
-    model = document.createModel()
+    model: libsbml.Model = document.createModel()
     model.setId("Basic_model_cFBA")
     model.setName("Basic model cFBA")
 
     # Define compartments
-    cytoplasm = model.createCompartment()
+    cytoplasm: libsbml.Compartment = model.createCompartment()
     cytoplasm.setId("cytoplasm")
     cytoplasm.setName("Cytoplasm")
     cytoplasm.setSpatialDimensions(3)  # Optional, set spatial dimensions
     cytoplasm.setConstant(True)  # Optional, set compartment as constant
 
-    extracellular_space = model.createCompartment()
+    extracellular_space: libsbml.Compartment = model.createCompartment()
     extracellular_space.setId("extracellular_space")
     extracellular_space.setName("Extracellular Space")
     extracellular_space.setSpatialDimensions(3)  # Optional, set spatial dimensions
@@ -218,7 +217,7 @@ def excel_to_sbml(excel_file, output_file):
 
     # Define metabolites
     for metabolite_id in mets:
-        metabolite = model.createSpecies()
+        metabolite: libsbml.Species = model.createSpecies()
         metabolite.setId(metabolite_id)
         metabolite.setCompartment("cytoplasm")  # Set compartment
 
@@ -237,7 +236,7 @@ def excel_to_sbml(excel_file, output_file):
 
     # Define reactions
     for reaction_id, stoichiometry in zip(rxns, S.T):
-        reaction = model.createReaction()
+        reaction: libsbml.Reaction = model.createReaction()
         reaction.setId(reaction_id)
 
         # Set required attributes
@@ -301,7 +300,7 @@ def excel_to_sbml(excel_file, output_file):
     )
 
 
-def read_sbml_file(sbml_file):
+def read_sbml_file(sbml_file: FileName) -> libsbml.SBMLDocument:
     """
     Read an SBML file and return the SBML document.
 
@@ -311,11 +310,13 @@ def read_sbml_file(sbml_file):
     Returns:
         libsbml.SBMLDocument: SBML document object.
     """
+    sbml_file_ = cast(Any, sbml_file)
+
     # Create an SBML reader object
     reader = libsbml.SBMLReader()
 
     # Read the SBML file and obtain the SBML document
-    document = reader.readSBML(sbml_file)
+    document: libsbml.SBMLDocument = reader.readSBML(sbml_file_)
 
     # Check for any errors in the SBML document
     if document.getNumErrors() > 0:
@@ -327,7 +328,7 @@ def read_sbml_file(sbml_file):
     return document
 
 
-def parse_compartments(model):
+def parse_compartments(sbml_model: libsbml.Model) -> dict[str, dict[str, Any]]:
     """
     Parse compartments from the SBML model and return compartment dictionary.
 
@@ -341,9 +342,9 @@ def parse_compartments(model):
     compartments = {}
 
     # Iterate over each compartment in the model
-    for i in range(model.getNumCompartments()):
+    for i in range(sbml_model.getNumCompartments()):
         # Get the compartment object
-        compartment = model.getCompartment(i)
+        compartment = sbml_model.getCompartment(i)
 
         # Extract compartment information and add it to the dictionary
         compartments[compartment.getId()] = {
@@ -355,7 +356,7 @@ def parse_compartments(model):
     return compartments
 
 
-def parse_species(model):
+def parse_species(sbml_model: libsbml.Model) -> SpeciesDict:
     """
     Parse species from the SBML model and return species dictionary.
 
@@ -369,12 +370,12 @@ def parse_species(model):
     species = {}
 
     # Iterate over each species in the model
-    for i in range(model.getNumSpecies()):
+    for i in range(sbml_model.getNumSpecies()):
         # Get the species object
-        specie = model.getSpecies(i)
+        metabolite: libsbml.Species = sbml_model.getSpecies(i)
 
         # Extract annotation and check if species is imbalanced
-        annotation = specie.getAnnotationString()
+        annotation = metabolite.getAnnotationString()
         is_imbalanced = False
         w_contribution = None
         if "<isImbalanced>true</isImbalanced>" in annotation:
@@ -384,13 +385,11 @@ def parse_species(model):
             start_idx = annotation.find("<wContribution>")
             end_idx = annotation.find("</wContribution>")
             if start_idx != -1 and end_idx != -1:
-                w_contribution = float(
-                    annotation[start_idx + len("<wContribution>") : end_idx]
-                )
+                w_contribution = float(annotation[start_idx + len("<wContribution>") : end_idx])
 
         # Add species information to the dictionary
-        species[specie.getId()] = {
-            "compartment": specie.getCompartment(),
+        species[metabolite.getId()] = {
+            "compartment": metabolite.getCompartment(),
             "imbalanced": is_imbalanced,
             "w_contribution": w_contribution,
         }
@@ -399,7 +398,7 @@ def parse_species(model):
     return species
 
 
-def parse_reactions(model):
+def parse_reactions(sbml_model: libsbml.Model) -> ReactionDict:
     """
     Parse reactions from the SBML model and return reaction dictionary.
 
@@ -413,9 +412,9 @@ def parse_reactions(model):
     reactions = {}
 
     # Iterate over each reaction in the model
-    for i in range(model.getNumReactions()):
+    for i in range(sbml_model.getNumReactions()):
         # Get the reaction object
-        reaction = model.getReaction(i)
+        reaction: libsbml.Reaction = sbml_model.getReaction(i)
 
         # Initialize a dictionary to store reaction data
         reaction_data = {
@@ -428,9 +427,7 @@ def parse_reactions(model):
         # Extract reactants and their stoichiometry
         for j in range(reaction.getNumReactants()):
             reactant = reaction.getReactant(j)
-            reaction_data["reactants"][
-                reactant.getSpecies()
-            ] = reactant.getStoichiometry()
+            reaction_data["reactants"][reactant.getSpecies()] = reactant.getStoichiometry()
 
         # Extract products and their stoichiometry
         for j in range(reaction.getNumProducts()):
@@ -455,7 +452,7 @@ def parse_reactions(model):
     return reactions
 
 
-def initialize_S_matrix(species, reactions):
+def initialize_S_matrix(species: SpeciesDict, reactions: ReactionDict) -> tuple[NDArray, list[str], list[str]]:
     """
     Initialize the stoichiometry matrix S.
 
@@ -493,7 +490,9 @@ def initialize_S_matrix(species, reactions):
     return S, mets, rxns
 
 
-def extract_imbalanced_metabolites(species, mets, S):
+def extract_imbalanced_metabolites(
+    species: SpeciesDict, mets: list[str], S: NDArray
+) -> tuple[list[int], list[int], list[str], list[str], NDArray, NDArray, NDArray]:
     """
     Extract indices and data for balanced and imbalanced metabolites.
 
@@ -545,7 +544,7 @@ def extract_imbalanced_metabolites(species, mets, S):
     )
 
 
-def extract_kinetic_parameters(reactions):
+def extract_kinetic_parameters(reactions: ReactionDict) -> tuple[NDArray, NDArray]:
     """
     Extract lower and upper bounds for kinetic parameters.
 
@@ -565,15 +564,11 @@ def extract_kinetic_parameters(reactions):
 
         # Extract lower bounds for kinetic parameters
         lb_values = [
-            kinetic_law_data.get(f"LB_{i}", 0)
-            for i in range(len(kinetic_law_data))
-            if f"LB_{i}" in kinetic_law_data
+            kinetic_law_data.get(f"LB_{i}", 0) for i in range(len(kinetic_law_data)) if f"LB_{i}" in kinetic_law_data
         ]  # Get LB_i values or default to 0
         # Extract upper bounds for kinetic parameters
         ub_values = [
-            kinetic_law_data.get(f"UB_{i}", 0)
-            for i in range(len(kinetic_law_data))
-            if f"LB_{i}" in kinetic_law_data
+            kinetic_law_data.get(f"UB_{i}", 0) for i in range(len(kinetic_law_data)) if f"LB_{i}" in kinetic_law_data
         ]  # Get UB_i values or default to 0
 
         low_b_var.append(lb_values)
@@ -585,7 +580,7 @@ def extract_kinetic_parameters(reactions):
     return low_b_var, upp_b_var
 
 
-def generate_time_components(low_b_var):
+def generate_time_components(low_b_var: NDArray) -> int:
     """
     Generate time components based on the size of the lower bound array.
 
@@ -596,12 +591,10 @@ def generate_time_components(low_b_var):
         nt (int): Number of time steps.
     """
     # Determine the number of time steps
-    nt = np.size(low_b_var[0])
-
-    return nt
+    return np.size(low_b_var, axis=1)
 
 
-def generate_B_and_A_matrices(reactions, imbalanced_mets):
+def generate_B_and_A_matrices(reactions: ReactionDict, imbalanced_mets: list[str]) -> tuple[NDArray, NDArray]:
     """
     Generate B and A matrices for capacities.
 
@@ -625,16 +618,12 @@ def generate_B_and_A_matrices(reactions, imbalanced_mets):
         # Check if the reaction contains catalyst information
         if reaction_data["annotation"].find("<catalyzedBy>") > 0:
             # Find the catalyst
-            position_start = reaction_data["annotation"].find("<catalyzedBy>") + len(
-                "<catalyzedBy>"
-            )
+            position_start = reaction_data["annotation"].find("<catalyzedBy>") + len("<catalyzedBy>")
             position_end = reaction_data["annotation"].find("</catalyzedBy>")
             catalyst_i = reaction_data["annotation"][position_start:position_end]
 
             # Find the A value
-            position_start = reaction_data["annotation"].find("<A_value>") + len(
-                "<A_value>"
-            )
+            position_start = reaction_data["annotation"].find("<A_value>") + len("<A_value>")
             position_end = reaction_data["annotation"].find("</A_value>")
             A_val_i = reaction_data["annotation"][position_start:position_end]
 
@@ -658,7 +647,9 @@ def generate_B_and_A_matrices(reactions, imbalanced_mets):
     return Bcap, Acap
 
 
-def generate_LP_cFBA(sbml_file, quotas, dt):
+def generate_LP_cFBA(
+    sbml_file: FileName, quotas: list[tuple[str, str, int, float]], dt: float
+) -> tuple[list[optlang.interface.Constraint], NDArray, list[str], int, int, int]:
     """
     Generate LP problem for constrained flux balance analysis (cFBA).
 
@@ -684,9 +675,7 @@ def generate_LP_cFBA(sbml_file, quotas, dt):
 
     # Initialize matrices and extract metabolite information
     S, mets, rxns = initialize_S_matrix(species, reactions)
-    _, _, imbalanced_mets, balanced_mets, w, Sb, Si = extract_imbalanced_metabolites(
-        species, mets, S
-    )
+    _, _, imbalanced_mets, balanced_mets, w, Sb, Si = extract_imbalanced_metabolites(species, mets, S)
     low_b_var, upp_b_var = extract_kinetic_parameters(reactions)
     nt = generate_time_components(low_b_var)
     Bcap, Acap = generate_B_and_A_matrices(reactions, imbalanced_mets)
@@ -700,12 +689,7 @@ def generate_LP_cFBA(sbml_file, quotas, dt):
     # Define variables: fluxes and starting amounts
     vk = np.array(
         [
-            [
-                Variable(
-                    f"{rxns[j]}__{i}", lb=low_b_var[j, i - 1], ub=upp_b_var[j, i - 1]
-                )
-                for j in range(nr)
-            ]
+            [Variable(f"{rxns[j]}__{i}", lb=low_b_var[j, i - 1], ub=upp_b_var[j, i - 1]) for j in range(nr)]
             for i in range(1, nt)
         ]
     ).T
@@ -762,7 +746,9 @@ def generate_LP_cFBA(sbml_file, quotas, dt):
     return cons, Mk, imbalanced_mets, nm, nr, nt
 
 
-def create_lp_problem(alpha, cons_new, Mk, imbalanced_mets):
+def create_lp_problem(
+    alpha: float, cons_new: list[optlang.interface.Constraint], Mk: NDArray, imbalanced_mets: list[str]
+) -> optlang.interface.Model:
     """
     Create LP problem to optimize cyclic growth rate.
 
@@ -789,7 +775,9 @@ def create_lp_problem(alpha, cons_new, Mk, imbalanced_mets):
     return prob
 
 
-def find_alpha(cons, Mk, imbalanced_mets):
+def find_alpha(
+    cons: list[optlang.interface.Constraint], Mk: NDArray, imbalanced_mets: list[str]
+) -> tuple[float, optlang.interface.Model]:
     """
     Find the optimal value for the cyclic growth rate alpha.
 
@@ -804,7 +792,7 @@ def find_alpha(cons, Mk, imbalanced_mets):
     """
     start = time()
 
-    alpha = 1
+    alpha = 1.0
 
     # Iterate to find the upper bound for alpha
     while True:
@@ -838,7 +826,9 @@ def find_alpha(cons, Mk, imbalanced_mets):
     return alpha, prob
 
 
-def get_fluxes_amounts(sbml_file, prob, dt):
+def get_fluxes_amounts(
+    sbml_file: FileName, prob: optlang.interface.Model, dt: float
+) -> tuple[NDArray, NDArray, NDArray]:
     """
     Obtain fluxes and metabolite amounts over time from cFBA simulations.
 
@@ -854,16 +844,14 @@ def get_fluxes_amounts(sbml_file, prob, dt):
     """
     # Read SBML file and parse model components
     document = read_sbml_file(sbml_file)
-    model = document.getModel()
+    model: libsbml.Model = document.getModel()
 
     species = parse_species(model)
     reactions = parse_reactions(model)
 
     # Initialize matrices and extract relevant data
     S, mets, rxns = initialize_S_matrix(species, reactions)
-    _, _, imbalanced_mets, _, _, _, Si = extract_imbalanced_metabolites(
-        species, mets, S
-    )
+    _, _, imbalanced_mets, _, _, _, Si = extract_imbalanced_metabolites(species, mets, S)
     low_b_var, _ = extract_kinetic_parameters(reactions)
     nt = generate_time_components(low_b_var)
     t = np.arange(0, nt * dt, dt)
