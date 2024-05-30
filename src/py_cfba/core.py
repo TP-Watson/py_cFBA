@@ -96,57 +96,56 @@ def generate_cFBA_excel_sheet(S_matrix, data, output_file_name):
     None
     """
     # Create Excel writer object
-    writer = pd.ExcelWriter(output_file_name, engine="xlsxwriter")
+    with pd.ExcelWriter(output_file_name, engine="xlsxwriter") as writer:
 
-    # Tab 1: S_mat
-    pd.DataFrame(S_matrix).to_excel(writer, sheet_name="S_mat")
+        # Tab 1: S_mat
+        pd.DataFrame(S_matrix).to_excel(writer, sheet_name="S_mat")
 
-    # Tab 2: Imbalanced_mets
-    imbalanced_mets_df = pd.DataFrame(
-        {"Met": data["Imbalanced metabolites"], "w_matrix": ""}
-    )
-    imbalanced_mets_df.to_excel(writer, sheet_name="Imbalanced_mets", index=False)
-
-    # Tab 3: lb_var
-    # Calculate time points
-    time_points = np.arange(0, data["total_time"] + data["dt"], data["dt"])
-    decimal_places = len(str(data["dt"]).split(".")[1])
-    # Round each value to the determined number of decimal places
-    time_points_rounded = [round(value, decimal_places) for value in time_points]
-    lb_var_df = pd.DataFrame(0, index=S_matrix.columns, columns=time_points_rounded)
-    lb_var_df.to_excel(writer, sheet_name="lb_var")
-
-    # Tab 4: ub_var
-    ub_var_df = pd.DataFrame(1000, index=S_matrix.columns, columns=time_points_rounded)
-    ub_var_df.to_excel(writer, sheet_name="ub_var")
-
-    # Tab 5: A_cap
-
-    a_cap_df = pd.DataFrame(index=S_matrix.columns).T
-    a_cap_df.to_excel(writer, sheet_name="A_cap", index=False)
-
-    # Tab 6: B_cap
-    if data["use_capacities"]:
-        # Determine the number of catalyzers
-        num_catalyzers = len(data["catalysts"])
-
-        # Create DataFrame filled with zeros
-        b_cap_df = pd.DataFrame(
-            0,
-            index=data["Imbalanced metabolites"],
-            columns=list(range(1, num_catalyzers + 1)),
+        # Tab 2: Imbalanced_mets
+        imbalanced_mets_df = pd.DataFrame(
+            {"Met": data["Imbalanced metabolites"], "w_matrix": ""}
         )
+        imbalanced_mets_df.to_excel(writer, sheet_name="Imbalanced_mets", index=False)
 
-        # Fill 1s in the corresponding positions
-        for i, catalyzer in enumerate(data["catalysts"], 1):
-            b_cap_df.loc[catalyzer, i] = 1
-        b_cap_df.T.to_excel(writer, sheet_name="B_cap", index=False)
-    else:
-        b_cap_df = pd.DataFrame()
-        b_cap_df.to_excel(writer, sheet_name="B_cap", index=False)
+        # Tab 3: lb_var
+        # Calculate time points
+        time_points = np.arange(0, data["total_time"] + data["dt"], data["dt"])
+        decimal_places = len(str(data["dt"]).split(".")[1])
+        # Round each value to the determined number of decimal places
+        time_points_rounded = [round(value, decimal_places) for value in time_points]
+        lb_var_df = pd.DataFrame(0, index=S_matrix.columns, columns=time_points_rounded)
+        lb_var_df.to_excel(writer, sheet_name="lb_var")
 
-    # Save the Excel file
-    writer.save()
+        # Tab 4: ub_var
+        ub_var_df = pd.DataFrame(
+            1000, index=S_matrix.columns, columns=time_points_rounded
+        )
+        ub_var_df.to_excel(writer, sheet_name="ub_var")
+
+        # Tab 5: A_cap
+
+        a_cap_df = pd.DataFrame(index=S_matrix.columns).T
+        a_cap_df.to_excel(writer, sheet_name="A_cap", index=False)
+
+        # Tab 6: B_cap
+        if data["use_capacities"]:
+            # Determine the number of catalyzers
+            num_catalyzers = len(data["catalysts"])
+
+            # Create DataFrame filled with zeros
+            b_cap_df = pd.DataFrame(
+                0,
+                index=data["Imbalanced metabolites"],
+                columns=list(range(1, num_catalyzers + 1)),
+            )
+
+            # Fill 1s in the corresponding positions
+            for i, catalyzer in enumerate(data["catalysts"], 1):
+                b_cap_df.loc[catalyzer, i] = 1
+            b_cap_df.T.to_excel(writer, sheet_name="B_cap", index=False)
+        else:
+            b_cap_df = pd.DataFrame()
+            b_cap_df.to_excel(writer, sheet_name="B_cap", index=False)
 
 
 def excel_to_sbml(excel_file, output_file):
