@@ -1,8 +1,9 @@
-__version__ = (0, 0, 0)
+"""Core functionality of the Python cFBA Toolbox."""
+
 __all__ = []
 
 from time import time
-from typing import Any, Type, cast
+from typing import Any, cast
 
 import libsbml
 import numpy as np
@@ -33,11 +34,12 @@ def cFBA_backbone_from_S_matrix(S_matrix: pd.DataFrame) -> tuple[dict[str, Any],
     """
     Generate an Excel backbone for a cFBA model based on the provided Stoichiometric matrix.
 
-    Parameters:
-    S_matrix (pd.DataFrame): Stoichiometric matrix where rows represent metabolites and columns represent reactions.
+    Args:
+        S_matrix: Stoichiometric matrix where rows represent metabolites and columns represent reactions.
 
     Returns:
-    dict: Dictionary containing user inputs for model configuration.
+        dict: Dictionary containing user inputs for model configuration.
+        dt: Time gap
     """
 
     # Get metabolite and reaction labels
@@ -102,13 +104,10 @@ def generate_cFBA_excel_sheet(S_matrix: pd.DataFrame, data: dict[str, Any], outp
     """
     Generate an Excel backbone for a cFBA model based on the provided Stoichiometric matrix and user data.
 
-    Parameters:
-    S_matrix (pd.DataFrame): Stoichiometric matrix where rows represent metabolites and columns represent reactions.
-    data (dict): Dictionary containing user inputs for model configuration.
-    output_file_name (str): Name of the output Excel file.
-
-    Returns:
-    None
+    Args:
+        S_matrix: Stoichiometric matrix where rows represent metabolites and columns represent reactions.
+        data: Dictionary containing user inputs for model configuration.
+        output_file_name: Name of the output Excel file.
     """
     # Create Excel writer object
     with pd.ExcelWriter(output_file_name, engine="xlsxwriter") as writer:
@@ -163,12 +162,9 @@ def excel_to_sbml(excel_file: FileName, output_file: FileName) -> None:
     """
     Converts metabolic model data from an Excel file (format for cFBA) to SBML format and saves it to an output file.
 
-    Parameters:
-    - excel_file (str): Path to the Excel file containing metabolic model data.
-    - output_file (str): Path to the output SBML file to be created.
-
-    Returns:
-    - None
+    Args:
+        excel_file: Path to the Excel file containing metabolic model data.
+        output_file: Path to the output SBML file to be created.
     """
 
     # Read the Excel sheet containing stoichiometric matrix
@@ -306,11 +302,11 @@ def read_sbml_file(sbml_file: FileName) -> libsbml.SBMLDocument:
     """
     Read an SBML file and return the SBML document.
 
-    Parameters:
-        sbml_file (str): Path to the SBML file.
+    Args:
+        sbml_file: Path to the SBML file.
 
     Returns:
-        libsbml.SBMLDocument: SBML document object.
+        document: SBML document object.
     """
     sbml_file_ = cast(Any, sbml_file)
 
@@ -334,11 +330,11 @@ def parse_compartments(sbml_model: libsbml.Model) -> dict[str, dict[str, Any]]:
     """
     Parse compartments from the SBML model and return compartment dictionary.
 
-    Parameters:
-        model (libsbml.Model): SBML model object.
+    Args:
+        model: SBML model object.
 
     Returns:
-        dict: Dictionary containing compartment information.
+        compartments: Dictionary containing compartment information.
     """
     # Initialize an empty dictionary to store compartment information
     compartments = {}
@@ -362,11 +358,11 @@ def parse_species(sbml_model: libsbml.Model) -> SpeciesDict:
     """
     Parse species from the SBML model and return species dictionary.
 
-    Parameters:
-        model (libsbml.Model): SBML model object.
+    Args:
+        model: SBML model object.
 
     Returns:
-        dict: Dictionary containing species information.
+        species: Dictionary containing species information.
     """
     # Initialize an empty dictionary to store species information
     species: SpeciesDict = {}
@@ -405,11 +401,11 @@ def parse_reactions(sbml_model: libsbml.Model) -> ReactionDict:
     """
     Parse reactions from the SBML model and return reaction dictionary.
 
-    Parameters:
-        model (libsbml.Model): SBML model object.
+    Args:
+        model: SBML model object.
 
     Returns:
-        dict: Dictionary containing reaction information.
+        reactions: Dictionary containing reaction information.
     """
     # Initialize an empty dictionary to store reaction information
     reactions: ReactionDict = {}
@@ -459,14 +455,14 @@ def initialize_S_matrix(species: SpeciesDict, reactions: ReactionDict) -> InitSM
     """
     Initialize the stoichiometry matrix S.
 
-    Parameters:
-        species (dict): Dictionary containing species data.
-        reactions (dict): Dictionary containing reaction data.
+    Args:
+        species: Dictionary containing species data.
+        reactions: Dictionary containing reaction data.
 
     Returns:
-        S (numpy.ndarray): Initialized stoichiometry matrix.
-        mets (list): List of metabolite labels.
-        rxns (list): List of reaction labels.
+        S: Initialized stoichiometry matrix.
+        mets: List of metabolite labels.
+        rxns: List of reaction labels.
     """
     # Extract metabolite and reaction labels
     mets = list(species.keys())
@@ -497,19 +493,19 @@ def extract_imbalanced_metabolites(species: SpeciesDict, mets: list[str], S: NDA
     """
     Extract indices and data for balanced and imbalanced metabolites.
 
-    Parameters:
-        species (dict): Dictionary containing species data.
-        mets (list): List of metabolite labels.
-        S (numpy.ndarray): Stoichiometry matrix.
+    Args:
+        species: Dictionary containing species data.
+        mets: List of metabolite labels.
+        S: Stoichiometry matrix.
 
     Returns:
-        indices_balanced (list): Indices of balanced metabolites.
-        indices_imbalanced (list): Indices of imbalanced metabolites.
-        imbalanced_mets (list): List of imbalanced metabolite labels.
-        balanced_mets (list): List of balanced metabolite labels.
-        w (numpy.ndarray): Array of w_contribution values for imbalanced metabolites.
-        Sb (numpy.ndarray): Stoichiometry matrix for balanced metabolites.
-        Si (numpy.ndarray): Stoichiometry matrix for imbalanced metabolites.
+        indices_balanced: Indices of balanced metabolites.
+        indices_imbalanced: Indices of imbalanced metabolites.
+        imbalanced_mets: List of imbalanced metabolite labels.
+        balanced_mets: List of balanced metabolite labels.
+        w: Array of w_contribution values for imbalanced metabolites.
+        Sb: Stoichiometry matrix for balanced metabolites.
+        Si: Stoichiometry matrix for imbalanced metabolites.
     """
     indices_balanced = []
     indices_imbalanced = []
@@ -549,12 +545,12 @@ def extract_kinetic_parameters(reactions: ReactionDict) -> KineticParamsBounds:
     """
     Extract lower and upper bounds for kinetic parameters.
 
-    Parameters:
-        reactions (dict): Dictionary containing reaction data.
+    Args:
+        reactions: Dictionary containing reaction data.
 
     Returns:
-        low_b_var (numpy.ndarray): Array of lower bounds for kinetic parameters.
-        upp_b_var (numpy.ndarray): Array of upper bounds for kinetic parameters.
+        low_b_var: Array of lower bounds for kinetic parameters.
+        upp_b_var: Array of upper bounds for kinetic parameters.
     """
     low_b_var = []
     upp_b_var = []
@@ -585,11 +581,11 @@ def generate_time_components(low_b_var: NDArray) -> int:
     """
     Generate time components based on the size of the lower bound array.
 
-    Parameters:
-        low_b_var (numpy.ndarray): Array of lower bounds for kinetic parameters.
+    Args:
+        low_b_var: Array of lower bounds for kinetic parameters.
 
     Returns:
-        nt (int): Number of time steps.
+        nt: Number of time steps.
     """
     # Determine the number of time steps
     return np.size(low_b_var, axis=1)
@@ -599,13 +595,13 @@ def generate_B_and_A_matrices(reactions: ReactionDict, imbalanced_mets: list[str
     """
     Generate B and A matrices for capacities.
 
-    Parameters:
-        reactions (dict): Dictionary containing reaction data.
-        imbalanced_mets (list): List of imbalanced metabolite labels.
+    Args:
+        reactions: Dictionary containing reaction data.
+        imbalanced_mets: List of imbalanced metabolite labels.
 
     Returns:
-        Bcap (numpy.ndarray): B matrix.
-        Acap (numpy.ndarray): A matrix.
+        Bcap: B matrix.
+        Acap: A matrix.
     """
     # Extract reaction IDs
     rxns = list(reactions.keys())
@@ -652,18 +648,18 @@ def generate_LP_cFBA(sbml_file: FileName, quotas: list[tuple[str, str, int, floa
     """
     Generate LP problem for constrained flux balance analysis (cFBA).
 
-    Parameters:
-        sbml_file (str): Path to the SBML file.
-        quotas (list): List containing all the quota definitions for the model in the form [type, metabolite, time, value].
-        dt (float): Time step increment.
+    Args:
+        sbml_file: Path to the SBML file.
+        quotas: List containing all the quota definitions for the model in the form [type, metabolite, time, value].
+        dt: Time step increment.
 
     Returns:
-        cons (list): List of constraints.
-        Mk (numpy.ndarray): Array of metabolite amounts over time.
-        imbalanced_mets (list): List of imbalanced metabolite labels.
-        nm (int): Number of metabolites.
-        nr (int): Number of reactions.
-        nt (int): Number of time steps.
+        cons: List of constraints.
+        Mk: Array of metabolite amounts over time.
+        imbalanced_mets: List of imbalanced metabolite labels.
+        nm: Number of metabolites.
+        nr: Number of reactions.
+        nt: Number of time steps.
     """
 
     # Read SBML file and parse model components
@@ -751,14 +747,14 @@ def create_lp_problem(
     """
     Create LP problem to optimize cyclic growth rate.
 
-    Parameters:
-        alpha (float): Initial value for cyclic growth rate.
-        cons_new (list): List of constraints.
-        Mk (numpy.ndarray): Array of metabolite amounts over time.
-        imbalanced_mets (list): List of imbalanced metabolite labels.
+    Args:
+        alpha: Initial value for cyclic growth rate.
+        cons_new: List of constraints.
+        Mk: Array of metabolite amounts over time.
+        imbalanced_mets: List of imbalanced metabolite labels.
 
     Returns:
-        prob (Model): LP problem object.
+        prob: LP problem object.
     """
     # Initialize LP problem
     prob = Model()
@@ -778,14 +774,14 @@ def find_alpha(cons: list[optlang.interface.Constraint], Mk: NDArray, imbalanced
     """
     Find the optimal value for the cyclic growth rate alpha.
 
-    Parameters:
-        cons (list): List of constraints.
-        Mk (numpy.ndarray): Array of metabolite amounts over time.
-        imbalanced_mets (list): List of imbalanced metabolite labels.
+    Args:
+        cons: List of constraints.
+        Mk: Array of metabolite amounts over time.
+        imbalanced_mets: List of imbalanced metabolite labels.
 
     Returns:
-        alpha (float): Optimal value for cyclic growth rate.
-        prob (Model): LP problem object after optimization.
+        alpha: Optimal value for cyclic growth rate.
+        prob: LP problem object after optimization.
     """
     start = time()
 
@@ -827,15 +823,15 @@ def get_fluxes_amounts(sbml_file: FileName, prob: optlang.interface.Model, dt: f
     """
     Obtain fluxes and metabolite amounts over time from cFBA simulations.
 
-    Parameters:
-        sbml_file (str): Path to the SBML file.
-        prob (Model): LP problem object.
-        dt (float): Time step increment.
+    Args:
+        sbml_file: Path to the SBML file.
+        prob: LP problem object.
+        dt: Time step increment.
 
     Returns:
-        fluxes (numpy.ndarray): Array of fluxes over time.
-        amounts (numpy.ndarray): Array of metabolite amounts over time.
-        t (numpy.ndarray): Time array.
+        fluxes: Array of fluxes over time.
+        amounts: Array of metabolite amounts over time.
+        t: Time array.
     """
     # Read SBML file and parse model components
     document = read_sbml_file(sbml_file)
