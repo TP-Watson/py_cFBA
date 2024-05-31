@@ -4,7 +4,7 @@ __all__ = []
 
 from os import PathLike
 from pathlib import Path
-from typing import NamedTuple, Optional, Type, TypedDict, Union
+from typing import Literal, NamedTuple, Optional, Type, TypedDict, Union
 
 import optlang.interface
 from numpy.typing import NDArray
@@ -21,6 +21,9 @@ Variable: Type[optlang.interface.Variable] = _Variable
 
 
 FileName = Union[str, Path, PathLike]
+
+ConstraintType = Literal["equality", "min", "max"]
+Quota = tuple[ConstraintType, str, int, float]
 
 
 class AlphaOutput(NamedTuple):

@@ -22,6 +22,7 @@ from py_cfba.typing import (
     KineticParamsBounds,
     LPProblemOutput,
     Model,
+    Quota,
     ReactionData,
     ReactionDict,
     SpeciesData,
@@ -644,7 +645,7 @@ def generate_B_and_A_matrices(reactions: ReactionDict, imbalanced_mets: list[str
     return CapacityMatrices(Bcap, Acap)
 
 
-def generate_LP_cFBA(sbml_file: FileName, quotas: list[tuple[str, str, int, float]], dt: float) -> LPProblemOutput:
+def generate_LP_cFBA(sbml_file: FileName, quotas: list[Quota], dt: float) -> LPProblemOutput:
     """
     Generate LP problem for constrained flux balance analysis (cFBA).
 
@@ -727,6 +728,8 @@ def generate_LP_cFBA(sbml_file: FileName, quotas: list[tuple[str, str, int, floa
             con = Constraint(exp[0], lb=0, name=f"quota_min{i}")
         elif cons_type == "max":
             con = Constraint(exp[0], ub=0, name=f"quota_max{i}")
+        else:
+            raise ValueError("Unrecognized type of constraint. Valid types are 'equality', 'min', and 'max'.")
         cons.append(con)
 
     # Capacity constraints (Acap * vk <= Bcap * Mk-1)
