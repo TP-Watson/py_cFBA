@@ -11,6 +11,7 @@ import optlang.interface
 import pandas as pd
 from numpy.typing import NDArray
 
+from py_cfba.logging import logger
 from py_cfba.typing import (
     AlphaOutput,
     CapacityMatrices,
@@ -56,10 +57,10 @@ def cFBA_backbone_from_S_matrix(S_matrix: pd.DataFrame) -> tuple[dict[str, Any],
     }
 
     # Ask user to select imbalanced metabolites
-    print("\n-------------- Imbalanced metabolites --------------")
-    print("Select the imbalanced metabolites:")
+    logger.info("\n-------------- Imbalanced metabolites --------------")
+    logger.info("Select the imbalanced metabolites:")
     for i, metabolite in enumerate(metabolites, 1):
-        print(f"{i}. {metabolite}")
+        logger.info(f"{i}. {metabolite}")
     imbalanced_indices = list(
         map(
             int,
@@ -72,21 +73,21 @@ def cFBA_backbone_from_S_matrix(S_matrix: pd.DataFrame) -> tuple[dict[str, Any],
     data["Imbalanced metabolites"] = imbalanced_metabolites
 
     # Ask for total time and dt
-    print("\n-------------- Simulation time --------------")
+    logger.info("\n-------------- Simulation time --------------")
     data["total_time"] = float(input("\nEnter the total time for simulation: "))
     data["dt"] = float(input("Enter the time gap (dt) to be simulated: "))
     dt = data["dt"]
 
     # Ask if user wants to test capacities
-    print("\n-------------- Enzyme capacities --------------")
+    logger.info("\n-------------- Enzyme capacities --------------")
     use_capacities = input("\nDo you want to test capacities? (yes/no): ").lower().strip()
     if use_capacities == "yes":
         data["use_capacities"] = True
 
         # Show imbalanced metabolites for capacity testing
-        print("\nWhich of the following (imbalanced metabolites) are catalysts:")
+        logger.info("\nWhich of the following (imbalanced metabolites) are catalysts:")
         for i, metabolite in enumerate(imbalanced_metabolites, 1):
-            print(f"{i}. {metabolite}")
+            logger.info(f"{i}. {metabolite}")
         catalyst_indices = list(
             map(
                 int,
@@ -294,7 +295,7 @@ def excel_to_sbml(excel_file: FileName, output_file: FileName) -> None:
 
     # Write SBML document to file
     libsbml.writeSBMLToFile(document, output_file)
-    print(
+    logger.info(
         f"SBML document with metabolites information and catalysis annotations has been created and saved to {output_file}."
     )
 
@@ -320,8 +321,7 @@ def read_sbml_file(sbml_file: FileName) -> libsbml.SBMLDocument:
     # Check for any errors in the SBML document
     if document.getNumErrors() > 0:
         # Print any encountered errors
-        print("Encountered the following SBML errors:")
-        print(document.getErrorLog().toString())
+        logger.error(f"Encountered the following SBML errors: {document.getErrorLog().toString()}")
 
     # Return the SBML document
     return document
@@ -734,7 +734,7 @@ def generate_LP_cFBA(sbml_file: FileName, quotas: list[Quota], dt: float) -> LPP
 
     # Capacity constraints (Acap * vk <= Bcap * Mk-1)
     if Acap.shape == (0,):
-        print("No catalytic capacities defined")
+        logger.warning("No catalytic capacities defined")
     else:
         for i, row in enumerate(np.dot(Acap, vk) - np.dot(Bcap, Mk[:, :-1])):
             for j, exp in enumerate(row, 1):
@@ -817,7 +817,7 @@ def find_alpha(cons: list[optlang.interface.Constraint], Mk: NDArray, imbalanced
     prob.optimize()
 
     elapsed_time = (time() - start) / 60
-    print(f"{elapsed_time:.2f} min")
+    logger.info(f"{elapsed_time:.2f} min")
 
     return AlphaOutput(alpha, prob)
 
