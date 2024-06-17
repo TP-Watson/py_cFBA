@@ -1,6 +1,6 @@
-"""`py_cFBA` is a Python toolbox designed for conditional flux balance analysis."""
+"""`py_cfba` is a Python toolbox designed for conditional flux balance analysis."""
 
-__version__ = (0, 0, 0)
+__version__ = (0, 0, 1)
 __all__ = [
     "cFBA_backbone_from_S_matrix",
     "create_lp_problem",
